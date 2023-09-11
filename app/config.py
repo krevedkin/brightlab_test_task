@@ -12,14 +12,15 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self):
-        return PostgresDsn.build(
+        dsn = PostgresDsn.build(
             scheme=self.DB_SCHEME,
             username=self.DB_USER,
             password=self.DB_PASSWORD,
             host=self.DB_HOST,
             port=self.DB_PORT,
-            path=f"/{self.DB_NAME}",
+            path=self.DB_NAME,
         )
+        return str(dsn)
 
 
 settings = Settings()
