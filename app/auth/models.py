@@ -19,6 +19,8 @@ class User(Base):
 class RefreshSessions(Base):
     __tablename__ = "refresh_sessions"
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), unique=True
+    )
     refresh_token: Mapped[Uuid] = mapped_column(Uuid, unique=True)
     expire: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
