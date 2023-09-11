@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "brightlab-test-task"
+version = "0.1.0"
+description = ""
+authors = ["igor <frakestolstm@gmail.com>"]
+readme = "README.md"
+packages = [{include = "brightlab_test_task"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = {extras = ["all"], version = "^0.103.1"}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
