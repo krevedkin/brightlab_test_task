@@ -1,8 +1,11 @@
+from typing import Literal
+
 from pydantic import PostgresDsn
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    MODE: Literal["TEST"] = "TEST"
     DB_SCHEME: str = "postgresql+asyncpg"
     DB_HOST: str = "localhost"
     DB_PORT: int = 5432
