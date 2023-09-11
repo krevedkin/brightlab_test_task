@@ -30,8 +30,11 @@ def create_access_token(data: dict):
     return jwt.encode(to_ecnode, settings.SECRET_KEY, settings.ALGORITHM)
 
 
-async def get_user(email: str) -> User | None:
-    return await UsersDAO.get_by_email(email)
+async def get_user(email: str, user_id: str | None = None) -> User | None:
+    user = await UsersDAO.get_by_email(email)
+    if not user and user_id:
+        user = await UsersDAO().get_by_id(int(user_id))
+    return user
 
 
 async def authenticate_user(email: str, password: str) -> User | bool:

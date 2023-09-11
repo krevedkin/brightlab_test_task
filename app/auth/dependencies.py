@@ -16,11 +16,12 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
-        username: str = payload.get("sub")  # type: ignore
+        username = payload.get("sub")
+        user_id = payload.get("user_id")
     except JWTError:
         raise IncorrectTokenFormatException
 
-    user = await get_user(email=username)
+    user = await get_user(email=username, user_id=user_id)
 
     if user is None:
         raise UserNotFoundHTTPException

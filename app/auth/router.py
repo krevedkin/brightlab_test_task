@@ -16,8 +16,13 @@ from app.auth.exceptions import (
     UserNotFoundHTTPException,
 )
 from app.auth.models import User as UserModel
-from app.auth.schemas import AccessToken, User, UserRegister
-from app.auth.utils import authenticate_user, register_user, set_tokens
+from app.auth.schemas import AccessToken, User, UserRegister, UserUpdate
+from app.auth.utils import (
+    authenticate_user,
+    get_password_hash,
+    register_user,
+    set_tokens,
+)
 from app.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Аутентификация"])
@@ -46,11 +51,6 @@ async def get_access_token(
 
     if isinstance(user, UserModel):
         return await set_tokens(response, user)
-
-
-@router.get("/me")
-async def get_me(user: Annotated[User, Depends(get_current_user)]) -> User:
-    return User(id=user.id, email=user.email)
 
 
 @router.post("/refresh", response_model=AccessToken)
@@ -98,4 +98,48 @@ async def logout(
     status_code=status.HTTP_201_CREATED,
 )
 async def registration(user: UserRegister):
+    """
+    Создает нового пользователя.
+    """
     await register_user(user.email, user.password)
+
+
+@router.get("/me")
+async def get_me(user: Annotated[User, Depends(get_current_user)]) -> User:
+    """
+    Получить данные текущего пользователя.
+    """
+    return User(id=user.id, email=user.email)
+
+
+@router.put("/update-user")
+async def update_user(
+    update_data: UserUpdate,
+    user: Annotated[User, Depends(get_current_user)],
+):
+    """
+    Полностью обновляет запись о пользователе. Необходимо передать новый email
+    и два пароля, после чего запись обновится.
+    """
+    update_data.password = get_password_hash(update_data.password)
+    await UsersDAO().update_record(
+        record_id=user.id,
+        email=update_data.email,
+        hashed_password=update_data.password,
+    )
+
+
+@router.delete("/delete-user")
+async def delete_user(
+    user: Annotated[User, Depends(get_current_user)],
+    request: Request,
+    response: Response,
+):
+    """
+    Удаляет залогиненого пользователя. После удаления производит logout.
+    """
+
+    await UsersDAO().delete_record(id=user.id)
+    refresh_token = request.cookies.get(settings.REFRESH_TOKEN_COOKIE_NAME)
+    response.delete_cookie(settings.REFRESH_TOKEN_COOKIE_NAME)
+    await RefreshSessionsDAO().delete_record(refresh_token=refresh_token)
