@@ -111,17 +111,18 @@ async def test_logout(auth_ac: AsyncClient):
 
 @pytest.mark.auth
 @pytest.mark.parametrize(
-    ("email", "password", "status_code"),
+    ("email", "password", "password_repeat", "status_code"),
     [
-        ("first_user@example.com", "string", 201),
-        ("first_user@example.com", "string", 409),
-        ("lessthan5password@example.com", "12345", 422),
+        ("first_user@example.com", "string", "string", 201),
+        ("first_user@example.com", "string", "string", 409),
+        ("lessthan5password@example.com", "12345", "12345", 422),
+        ("password_not_match@example.com", "string", "string1", 422),
     ],
 )
-async def test_register(email, password, status_code, ac: AsyncClient):
+async def test_register(email, password, password_repeat, status_code, ac: AsyncClient):
     response = await ac.post(
         "/auth/register",
-        json={"email": email, "password": password},
+        json={"email": email, "password": password, "password_repeat": password_repeat},
     )
 
     assert response.status_code == status_code
