@@ -41,12 +41,20 @@ class BaseDAO:
     async def delete_record(cls, **filter_by):
         async with async_session_maker() as session:
             stmt = delete(cls.model).filter_by(**filter_by)  # type: ignore
-            await session.execute(stmt)
-            await session.commit()
+            result = await session.execute(stmt)
+            if result.rowcount != 0:
+                await session.commit()
+                return True
+            else:
+                return False
 
     @classmethod
     async def update_record(cls, record_id: int, **values):
         async with async_session_maker() as session:
             stmt = update(cls.model).where(cls.model.id == record_id).values(**values)  # type: ignore
-            await session.execute(stmt)
-            await session.commit()
+            result = await session.execute(stmt)
+            if result.rowcount != 0:
+                await session.commit()
+                return True
+            else:
+                return False
