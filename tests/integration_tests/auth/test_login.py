@@ -114,7 +114,7 @@ async def test_logout(auth_ac: AsyncClient):
     ("email", "password", "password_repeat", "status_code"),
     [
         ("first_user@example.com", "string", "string", 201),
-        ("first_user@example.com", "string", "string", 409),
+        ("user@example.com", "string", "string", 409),
         ("lessthan5password@example.com", "12345", "12345", 422),
         ("password_not_match@example.com", "string", "string1", 422),
     ],
