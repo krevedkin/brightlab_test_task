@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     DB_PASSWORD: str = "postgres"
     DB_NAME: str = "brightlab-db"
 
+    SMTP_HOST: str
+    SMTP_PORT: int
+    SMTP_USER: str
+    SMTP_PASSWORD: str
+
     SECRET_KEY: str = "TrE55giQ8nLAWvFYpsLxe/zkZNHcQP9fIwe4ys+zD3A="
     ALGORITHM: str = "HS256"
     REFRESH_TOKEN_COOKIE_NAME: str = "app-refresh-token"
