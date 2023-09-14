@@ -5,12 +5,13 @@ from httpx import AsyncClient
 from sqlalchemy import text
 
 from app.auth.models import User  # noqa: F401
+from app.task.models import Task, TaskUser  # noqa: F401
 from app.config import settings
 from app.database import Base, async_session_maker, engine
 from app.main import app as fastapi_app
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=True, scope="function")
 async def prepare_database():
     assert settings.MODE == "TEST"
     async with engine.begin() as conn:
@@ -21,9 +22,7 @@ async def prepare_database():
             with open(f"tests/mock_data/{file_name}.sql") as f:
                 return f.read()
 
-        sql_files = (
-            "users_mock",
-        )
+        sql_files = ("users_mock", "tasks_mock", "task_users_mock")
 
         for file in sql_files:
             query = text(read_sql_file(file))
