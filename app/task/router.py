@@ -75,7 +75,7 @@ async def get_all_tasks():
 )
 async def update_task(task: TaskUpdateSchema):
     """
-    Обвновляет все поля задачи.
+    Обновляет все поля задачи.
     """
     result = await TaskDAO().update_record(
         record_id=task.task_id, description=task.description, deadline=task.deadline
@@ -83,6 +83,8 @@ async def update_task(task: TaskUpdateSchema):
 
     if not result:
         raise exc.CantUpdateTaskHttpError
+
+    return {"detail": "Задача обновлена"}
 
 
 @router.delete(
