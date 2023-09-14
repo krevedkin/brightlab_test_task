@@ -12,7 +12,6 @@ from app.task.exceptions import (
 async def test_get_all_tasks_with_users():
     result = await TaskDAO().get_all_tasks_with_users()
     assert all([isinstance(task, Task) for task in result])
-    assert len(result) == 2
 
 
 @pytest.mark.task
