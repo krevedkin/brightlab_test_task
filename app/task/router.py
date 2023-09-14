@@ -1,6 +1,8 @@
 from fastapi import APIRouter, status
 
+from app.background_tasks import tasks
 from app.task.dao import TaskDAO, TaskUserDAO
+from app.auth.dao import UsersDAO
 from app.task.schemas import (
     TaskAddUserSchema,
     TaskDeleteSchema,
@@ -150,6 +152,15 @@ async def add_user_to_task(task: TaskAddUserSchema):
     except exc.UserAlreadyAddedToTaskDatabaseError:
         raise exc.UserAlreadyAddedToTaskHTTPError
 
+    user_data = await UsersDAO().get_by_id(task.user_id)
+    task_data = await TaskDAO().get_by_id(task.task_id)
+    if user_data and task_data:
+        tasks.email_user_added_to_task.delay(
+            task_description=task_data.description,
+            deadline=task_data.deadline,
+            task_id=task_data.id,
+            user_email=user_data.email,
+        )
     return {"detail": "Пользователь успешно добавлен к задаче"}
 
 
