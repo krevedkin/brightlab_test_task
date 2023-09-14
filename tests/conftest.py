@@ -11,7 +11,7 @@ from app.database import Base, async_session_maker, engine
 from app.main import app as fastapi_app
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=True, scope="function")
 async def prepare_database():
     assert settings.MODE == "TEST"
     async with engine.begin() as conn:
