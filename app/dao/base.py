@@ -33,9 +33,10 @@ class BaseDAO:
     @classmethod
     async def insert_record(cls, **data):
         async with async_session_maker() as session:
-            stmt = insert(cls.model).values(**data)  # type: ignore
-            await session.execute(stmt)
+            stmt = insert(cls.model).values(**data).returning(cls.model)  # type: ignore
+            result = await session.execute(stmt)
             await session.commit()
+            return result.scalar_one_or_none()
 
     @classmethod
     async def delete_record(cls, **filter_by):
@@ -51,10 +52,7 @@ class BaseDAO:
     @classmethod
     async def update_record(cls, record_id: int, **values):
         async with async_session_maker() as session:
-            stmt = update(cls.model).where(cls.model.id == record_id).values(**values)  # type: ignore
+            stmt =(update(cls.model).where(cls.model.id == record_id).values(**values).returning(cls.model))   # type: ignore
             result = await session.execute(stmt)
-            if result.rowcount != 0:
-                await session.commit()
-                return True
-            else:
-                return False
+            await session.commit()
+            return result.scalar_one_or_none()
