@@ -1,7 +1,6 @@
 from fastapi import APIRouter, status
-
 from app.background_tasks import tasks
-from app.task.dao import TaskDAO, TaskUserDAO
+from app.task.dao import TaskDAO, TaskUserDAO, CeleryTaskDAO
 from app.auth.dao import UsersDAO
 from app.task.schemas import (
     TaskAddUserSchema,
@@ -20,10 +19,18 @@ router = APIRouter(prefix="/task", tags=["Задачи"])
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_task(task: TaskCreateSchema):
     """
-    Создать новую задачу.
+    Создает новую задачу. Запускает celery задачу с временем выполнения task.deadline
     """
-    await TaskDAO().insert_record(description=task.description, deadline=task.deadline)
-    return {"detail": "Задача создана"}
+    result = await TaskDAO().insert_record(
+        description=task.description,
+        deadline=task.deadline,
+    )
+    if result:
+        celery_task = tasks.email_users_task_expired.apply_async(
+            eta=task.deadline, args=[result.id]
+        )
+        await CeleryTaskDAO().insert_record(id=celery_task.id, task_id=result.id)
+        return {"detail": f"Задача id:{result.id} создана"}
 
 
 @router.get(
@@ -82,11 +89,22 @@ async def update_task(task: TaskUpdateSchema):
     result = await TaskDAO().update_record(
         record_id=task.task_id, description=task.description, deadline=task.deadline
     )
-
     if not result:
         raise exc.CantUpdateTaskHttpError
 
-    return {"detail": "Задача обновлена"}
+    celery_task = await CeleryTaskDAO().get_one_or_none(task_id=result.id)
+    if celery_task:
+        tasks.revoke_task(celery_task.id)
+        await CeleryTaskDAO().delete_record(id=celery_task.id)
+
+        new_celery_task = tasks.email_users_task_expired.apply_async(
+            eta=task.deadline, args=[result.id]
+        )
+        await CeleryTaskDAO().insert_record(
+            id=new_celery_task.id, task_id=result.id  # type: ignore
+        )
+
+        return {"detail": "Задача обновлена"}
 
 
 @router.delete(
@@ -112,9 +130,13 @@ async def delete_task(task: TaskDeleteSchema):
     """
     Удаляет задачу. Если задачи не существует, вызовет ошибку 404.
     """
+    celery_task = await CeleryTaskDAO().get_one_or_none(task_id=task.task_id)
     result = await TaskDAO().delete_record(id=task.task_id)
     if not result:
         raise exc.CantDeleteTaskHttpError
+
+    if celery_task:
+        tasks.revoke_task(celery_task.id)
 
 
 @router.post(
