@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 import pytest
+from pytest_mock import MockerFixture
 from httpx import AsyncClient
 
 
@@ -161,7 +162,17 @@ async def test_delete_task_error(ac: AsyncClient):
         ),
     ],
 )
-async def test_add_user_to_task(ac: AsyncClient, status_code, detail, task_id, user_id):
+async def test_add_user_to_task(
+    ac: AsyncClient,
+    status_code: int,
+    detail: str,
+    task_id: int,
+    user_id: int,
+    mocker: MockerFixture,
+):
+    mocked_celery_task = mocker.patch(
+        "app.background_tasks.tasks.email_user_added_to_task.delay"
+    )
     response = await ac.post(
         "/task/user",
         json={
@@ -169,9 +180,12 @@ async def test_add_user_to_task(ac: AsyncClient, status_code, detail, task_id, u
             "user_id": user_id,
         },
     )
+
     data = response.json()
     assert response.status_code == status_code
     assert data["detail"] == detail
+    if response.status_code == 201:
+        mocked_celery_task.assert_called()
 
 
 @pytest.mark.task
