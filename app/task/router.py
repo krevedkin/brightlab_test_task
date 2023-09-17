@@ -1,19 +1,22 @@
-from fastapi import APIRouter, status
-from app.background_tasks import tasks
-from app.task.dao import TaskDAO, TaskUserDAO, CeleryTaskDAO
+from fastapi import APIRouter, Depends, status
+
 from app.auth.dao import UsersDAO
+from app.auth.dependencies import get_current_user
+from app.background_tasks import tasks
+from app.task import exceptions as exc
+from app.task.dao import CeleryTaskDAO, TaskDAO, TaskUserDAO
 from app.task.schemas import (
     TaskAddUserSchema,
+    TaskCreateSchema,
     TaskDeleteSchema,
     TaskDeleteUserSchema,
     TaskGetSchema,
     TaskUpdateSchema,
-    TaskCreateSchema,
 )
 
-from app.task import exceptions as exc
-
-router = APIRouter(prefix="/task", tags=["Задачи"])
+router = APIRouter(
+    prefix="/task", tags=["Задачи"], dependencies=[Depends(get_current_user)]
+)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
