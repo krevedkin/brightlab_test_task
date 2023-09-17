@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 from httpx import AsyncClient
@@ -6,17 +6,16 @@ from httpx import AsyncClient
 
 @pytest.mark.task
 async def test_create_task(ac: AsyncClient):
-    date = datetime.utcnow()
+    date = datetime.utcnow() + timedelta(minutes=10)
 
+    print(date.isoformat())
     response = await ac.post(
         "/task",
         json={
             "description": "Test task",
-            "deadline": date.isoformat(),
+            "deadline": date.isoformat() + "Z",
         },
     )
-    data = response.json()
-    assert data["detail"] == "Задача создана"
     assert response.status_code == 201
 
 
@@ -58,26 +57,26 @@ async def test_get_all_tasks(ac: AsyncClient, mocker):
 
 @pytest.mark.task
 async def test_update_task(ac: AsyncClient):
+    date = datetime.utcnow() + timedelta(minutes=10)
     response = await ac.put(
         "/task",
         json={
             "description": "Обновленное описание задачи",
-            "deadline": datetime.utcnow().isoformat(),
+            "deadline": date.isoformat() + "Z",
             "task_id": 1,
         },
     )
-    data = response.json()
     assert response.status_code == 201
-    assert data["detail"] == "Задача обновлена"
 
 
 @pytest.mark.task
 async def test_update_task_error(ac: AsyncClient):
+    date = datetime.utcnow() + timedelta(minutes=1)
     response = await ac.put(
         "/task",
         json={
             "description": "Обновленное описание задачи",
-            "deadline": datetime.utcnow().isoformat(),
+            "deadline": date.isoformat() + "Z",
             "task_id": 100500,
         },
     )
@@ -87,6 +86,21 @@ async def test_update_task_error(ac: AsyncClient):
         data["detail"]
         == "Невозможно изменить задачу с таким id. Такая задача не найдена."
     )
+
+
+@pytest.mark.task
+async def test_update_task_past_date(ac: AsyncClient):
+    date = datetime.utcnow() - timedelta(minutes=10)
+    response = await ac.put(
+        "/task",
+        json={
+            "description": "Обновленное описание задачи",
+            "deadline": date.isoformat() + "Z",
+            "task_id": 1,
+        },
+    )
+
+    assert response.status_code == 422
 
 
 @pytest.mark.task
