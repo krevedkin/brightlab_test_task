@@ -5,7 +5,7 @@ from httpx import AsyncClient
 from sqlalchemy import text
 
 from app.auth.models import User  # noqa: F401
-from app.task.models import Task, TaskUser  # noqa: F401
+from app.task.models import Task, TaskUser, CeleryTask  # noqa: F401
 from app.config import settings
 from app.database import Base, async_session_maker, engine
 from app.main import app as fastapi_app
