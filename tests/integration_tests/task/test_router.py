@@ -6,11 +6,10 @@ from httpx import AsyncClient
 
 
 @pytest.mark.task
-async def test_create_task(ac: AsyncClient):
+async def test_create_task(auth_ac: AsyncClient):
     date = datetime.utcnow() + timedelta(minutes=10)
 
-    print(date.isoformat())
-    response = await ac.post(
+    response = await auth_ac.post(
         "/task",
         json={
             "description": "Test task",
@@ -21,8 +20,8 @@ async def test_create_task(ac: AsyncClient):
 
 
 @pytest.mark.task
-async def test_get_task(ac: AsyncClient):
-    response = await ac.get("/task", params={"task_id": 1})
+async def test_get_task(auth_ac: AsyncClient):
+    response = await auth_ac.get("/task", params={"task_id": 1})
     data = response.json()
     expected_keys = ["description", "deadline", "id", "users"]
 
@@ -31,16 +30,16 @@ async def test_get_task(ac: AsyncClient):
 
 
 @pytest.mark.task
-async def test_get_task_not_exist(ac: AsyncClient):
-    response = await ac.get("/task", params={"task_id": 100500})
+async def test_get_task_not_exist(auth_ac: AsyncClient):
+    response = await auth_ac.get("/task", params={"task_id": 100500})
     data = response.json()
     assert response.status_code == 404
     assert data["detail"] == "Задача с таким id не найдена."
 
 
 @pytest.mark.task
-async def test_get_all_tasks(ac: AsyncClient, mocker):
-    response = await ac.get("/task/list")
+async def test_get_all_tasks(auth_ac: AsyncClient, mocker):
+    response = await auth_ac.get("/task/list")
     data = response.json()
     assert response.status_code == 200
     assert len(data) > 1
@@ -49,17 +48,17 @@ async def test_get_all_tasks(ac: AsyncClient, mocker):
     expected_keys = ["description", "deadline", "id", "users"]
     assert all([key in data for key in expected_keys])
 
-    mocker.patch.object(ac, "get")
-    response = await ac.get("/task/list")
+    mocker.patch.object(auth_ac, "get")
+    response = await auth_ac.get("/task/list")
     response.json.return_value = []
 
     assert await response.json() == []
 
 
 @pytest.mark.task
-async def test_update_task(ac: AsyncClient):
+async def test_update_task(auth_ac: AsyncClient):
     date = datetime.utcnow() + timedelta(minutes=10)
-    response = await ac.put(
+    response = await auth_ac.put(
         "/task",
         json={
             "description": "Обновленное описание задачи",
@@ -71,9 +70,9 @@ async def test_update_task(ac: AsyncClient):
 
 
 @pytest.mark.task
-async def test_update_task_error(ac: AsyncClient):
+async def test_update_task_error(auth_ac: AsyncClient):
     date = datetime.utcnow() + timedelta(minutes=1)
-    response = await ac.put(
+    response = await auth_ac.put(
         "/task",
         json={
             "description": "Обновленное описание задачи",
@@ -90,9 +89,9 @@ async def test_update_task_error(ac: AsyncClient):
 
 
 @pytest.mark.task
-async def test_update_task_past_date(ac: AsyncClient):
+async def test_update_task_past_date(auth_ac: AsyncClient):
     date = datetime.utcnow() - timedelta(minutes=10)
-    response = await ac.put(
+    response = await auth_ac.put(
         "/task",
         json={
             "description": "Обновленное описание задачи",
@@ -105,8 +104,8 @@ async def test_update_task_past_date(ac: AsyncClient):
 
 
 @pytest.mark.task
-async def test_delete_task(ac: AsyncClient):
-    response = await ac.request(
+async def test_delete_task(auth_ac: AsyncClient):
+    response = await auth_ac.request(
         method="delete",
         url="/task",
         json={
@@ -116,8 +115,8 @@ async def test_delete_task(ac: AsyncClient):
     assert response.status_code == 204
 
 
-async def test_delete_task_error(ac: AsyncClient):
-    response = await ac.request(
+async def test_delete_task_error(auth_ac: AsyncClient):
+    response = await auth_ac.request(
         method="delete",
         url="/task",
         json={
@@ -163,7 +162,7 @@ async def test_delete_task_error(ac: AsyncClient):
     ],
 )
 async def test_add_user_to_task(
-    ac: AsyncClient,
+    auth_ac: AsyncClient,
     status_code: int,
     detail: str,
     task_id: int,
@@ -173,7 +172,7 @@ async def test_add_user_to_task(
     mocked_celery_task = mocker.patch(
         "app.background_tasks.tasks.email_user_added_to_task.delay"
     )
-    response = await ac.post(
+    response = await auth_ac.post(
         "/task/user",
         json={
             "task_id": task_id,
@@ -198,8 +197,8 @@ async def test_add_user_to_task(
         (409, 100500, 100500),
     ],
 )
-async def test_delete_user_from_task(ac: AsyncClient, status_code, task_id, user_id):
-    response = await ac.request(
+async def test_delete_user_from_task(auth_ac: AsyncClient, status_code, task_id, user_id):
+    response = await auth_ac.request(
         method="delete",
         url="/task/user",
         json={"task_id": task_id, "user_id": user_id},
