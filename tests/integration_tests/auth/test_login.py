@@ -83,22 +83,6 @@ async def test_refresh_session_not_exists(auth_ac: AsyncClient):
     )
 
 
-# TODO разобраться как делать мок
-@pytest.mark.skip
-async def test_refresh_token_expired(mocker, auth_ac: AsyncClient):
-    refresh_session = mocker.Mock()
-
-    refresh_session.expire = datetime.now(timezone.utc) - timedelta(minutes=10)
-
-    mocker.patch(
-        "app.auth.dao.RefreshSessionsDAO"
-    ).return_value.get_refresh_session.return_value = refresh_session
-
-    response = await auth_ac.post("/auth/refresh")
-
-    assert response.status_code == 401
-
-
 @pytest.mark.auth
 async def test_logout(auth_ac: AsyncClient):
     refresh_token = auth_ac.cookies.get(settings.REFRESH_TOKEN_COOKIE_NAME)
