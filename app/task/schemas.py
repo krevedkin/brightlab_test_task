@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, FutureDatetime
 
 from app.auth.schemas import User
 
@@ -16,11 +16,12 @@ class TaskGetSchema(TaskSchemaBase):
 
 
 class TaskCreateSchema(TaskSchemaBase):
-    ...
+    deadline: FutureDatetime
 
 
 class TaskUpdateSchema(TaskSchemaBase):
     task_id: int
+    deadline: FutureDatetime
 
 
 class TaskDeleteSchema(BaseModel):
