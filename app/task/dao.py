@@ -8,7 +8,7 @@ from app.auth.models import User
 from app.dao.base import BaseDAO
 from app.database import async_session_maker
 from app.task import exceptions as exc
-from app.task.models import Task, TaskUser
+from app.task.models import CeleryTask, Task, TaskUser
 
 
 class TaskDAO(BaseDAO):
@@ -49,3 +49,7 @@ class TaskUserDAO(BaseDAO):
                     raise exc.UserAlreadyAddedToTaskDatabaseError
                 case "23503":
                     raise exc.CantAddUserToTaskDatabaseError
+
+
+class CeleryTaskDAO(BaseDAO):
+    model = CeleryTask
